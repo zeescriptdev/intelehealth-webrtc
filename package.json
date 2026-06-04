@@ -1,0 +1,35 @@
+{
+  "name": "@intelehealth/webrtc",
+  "version": "0.1.0-dev.0",
+  "private": false,
+  "description": "A reusable React WebRTC video call component for local development and multi-project consumption.",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --external react --external react-dom --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --external react --external react-dom --watch",
+    "prepare": "npm run build",
+    "lint": "echo \"No lint configured\"",
+    "test": "echo \"No tests yet\""
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "tsup": "^7.0.0",
+    "typescript": "^5.5.0"
+  }
+}
