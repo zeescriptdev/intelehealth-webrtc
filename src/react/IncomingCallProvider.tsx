@@ -9,15 +9,15 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import { SignalingSocket } from '../socket/signaling-socket';
-import type { ConnectOptions } from '../socket/signaling-socket';
-import type { CallData, IncomingCallData } from '../socket/types';
-import CallRoom from './components/CallRoom';
-import IncomingCallModal from './components/IncomingCallModal';
+import { SignalingSocket } from '../socket/signaling-socket.js';
+import type { ConnectOptions } from '../socket/signaling-socket.js';
+import type { CallData, IncomingCallData } from '../socket/types.js';
+import CallRoom from './components/CallRoom.js';
+import IncomingCallModal from './components/IncomingCallModal.js';
 import type {
   IncomingCallContextType,
   IncomingCallPayload,
-} from './types';
+} from './types.js';
 
 export interface WebRTCUser {
   uuid: string;

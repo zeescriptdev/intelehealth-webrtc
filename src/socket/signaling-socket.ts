@@ -1,5 +1,5 @@
 import io from 'socket.io-client';
-import { SOCKET_EVENTS } from './events';
+import { SOCKET_EVENTS } from './events.js';
 import type {
   ByeData,
   CallConnectedData,
@@ -7,7 +7,7 @@ import type {
   IncomingCallData,
   SocketUser,
   ToastData,
-} from './types';
+} from './types.js';
 
 export type SocketHandler<T = unknown> = (payload: T) => void;
 export type Unsubscribe = () => void;

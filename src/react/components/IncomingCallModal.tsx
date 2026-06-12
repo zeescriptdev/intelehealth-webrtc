@@ -1,5 +1,5 @@
-import { AcceptCallIcon, DeclineCallIcon } from '../icons';
-import type { IncomingCallModalProps } from '../types';
+import { AcceptCallIcon, DeclineCallIcon } from '../icons.js';
+import type { IncomingCallModalProps } from '../types.js';
 
 const getInitials = (name: string) => {
   const parts = name.trim().split(' ').filter(Boolean).slice(0, 2);

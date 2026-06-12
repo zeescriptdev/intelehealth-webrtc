@@ -14,7 +14,7 @@ import {
   MicIcon,
   MinimizeIcon,
   VideoIcon,
-} from '../icons';
+} from '../icons.js';
 
 export interface CallRoomProps {
   serverUrl: string;

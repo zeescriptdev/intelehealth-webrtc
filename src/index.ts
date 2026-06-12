@@ -1,5 +1,5 @@
-export { SOCKET_EVENTS, type SocketEventName } from './socket/events';
-export { CALL_STATUSES } from './socket/types';
+export { SOCKET_EVENTS, type SocketEventName } from './socket/events.js';
+export { CALL_STATUSES } from './socket/types.js';
 export type {
   CallStatus,
   SocketUser,
@@ -8,7 +8,7 @@ export type {
   ByeData,
   CallConnectedData,
   ToastData,
-} from './socket/types';
+} from './socket/types.js';
 export {
   SignalingSocket,
   type SignalingSocketOptions,
@@ -16,7 +16,7 @@ export {
   type Unsubscribe,
   type ConnectOptions,
   type RawSocket,
-} from './socket/signaling-socket';
+} from './socket/signaling-socket.js';
 
 export {
   IncomingCallProvider,
@@ -24,23 +24,23 @@ export {
   useIncomingCallContext,
   type CallProviderConfig,
   type WebRTCUser,
-} from './react/IncomingCallProvider';
+} from './react/IncomingCallProvider.js';
 
-export { default as IncomingCallModal } from './react/components/IncomingCallModal';
+export { default as IncomingCallModal } from './react/components/IncomingCallModal.js';
 export {
   default as CallRoom,
   type CallRoomProps,
-} from './react/components/CallRoom';
+} from './react/components/CallRoom.js';
 
 export {
   AcceptCallIcon,
   DeclineCallIcon,
   EndCallIcon,
   MaximizeIcon,
-} from './react/icons';
+} from './react/icons.js';
 
 export type {
   IncomingCallPayload,
   IncomingCallContextType,
   IncomingCallModalProps,
-} from './react/types';
+} from './react/types.js';
