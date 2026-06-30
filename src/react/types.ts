@@ -5,6 +5,8 @@ export interface IncomingCallPayload {
   openMrsId?: string;
   token?: string;
   roomId?: string;
+  doctorId?: string;
+  nurseId?: string;
   raw?: unknown;
 }
 

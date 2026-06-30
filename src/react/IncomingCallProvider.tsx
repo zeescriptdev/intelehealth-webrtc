@@ -11,9 +11,11 @@ import {
 } from 'react';
 import { SignalingSocket } from '../socket/signaling-socket.js';
 import type { ConnectOptions } from '../socket/signaling-socket.js';
-import type { CallData, IncomingCallData } from '../socket/types.js';
+import { CALL_STATUSES } from '../socket/types.js';
+import type { CallData, IncomingCallData, SocketUser } from '../socket/types.js';
 import CallRoom from './components/CallRoom.js';
 import IncomingCallModal from './components/IncomingCallModal.js';
+import { useRingtone } from './useRingtone.js';
 import type {
   IncomingCallContextType,
   IncomingCallPayload,
@@ -32,6 +34,8 @@ export interface CallProviderConfig {
   socketOptions?: ConnectOptions;
   mapIncomingCall?: (raw: IncomingCallData | CallData) => IncomingCallPayload;
   enableTestTrigger?: boolean;
+  ringtone?: boolean;
+  ringtoneUrl?: string;
   onAccept?: (call: IncomingCallPayload, socket: SignalingSocket | null) => void;
   onDecline?: (
     call: IncomingCallPayload | undefined,
@@ -57,6 +61,8 @@ const defaultMapIncomingCall = (
     openMrsId: toStr(r.patientOpenMrsId ?? r.openMrsId),
     token: toStr(r.appToken),
     roomId: toStr(r.roomId),
+    doctorId: toStr(r.doctorId ?? r.connectToDrId),
+    nurseId: toStr(r.nurseId),
     raw,
   };
 };
@@ -78,6 +84,8 @@ export const IncomingCallProvider = ({
     socketOptions,
     mapIncomingCall = defaultMapIncomingCall,
     enableTestTrigger = true,
+    ringtone = true,
+    ringtoneUrl,
     onAccept,
     onDecline,
     onEnd,
@@ -94,19 +102,31 @@ export const IncomingCallProvider = ({
   const socketRef = useRef<SignalingSocket | null>(null);
   const isActiveCallOpenRef = useRef(false);
   isActiveCallOpenRef.current = isActiveCallOpen;
-  const ringKeyRef = useRef('');
+  const isIncomingOpenRef = useRef(false);
+  isIncomingOpenRef.current = isIncomingCallOpen;
+  const incomingCallRef = useRef<IncomingCallPayload | null>(null);
+  incomingCallRef.current = incomingCall;
+  const lastRingRef = useRef<{ key: string; at: number }>({ key: '', at: 0 });
+  const DEDUPE_MS = 4000;
+
+  useRingtone(isIncomingCallOpen, { enabled: ringtone, url: ringtoneUrl });
 
   const closeIncomingCall = useCallback(() => {
     setIsIncomingCallOpen(false);
   }, []);
 
   const showIncomingCall = useCallback((call: IncomingCallPayload) => {
-    /* A ring can arrive twice (socket + FCM). Never replace a live call, and
-       ignore the duplicate of the ring already on screen. */
     if (isActiveCallOpenRef.current) return;
     const key = call.roomId || call.visitId || '';
-    if (key && key === ringKeyRef.current) return;
-    ringKeyRef.current = key;
+    const now = Date.now();
+    if (
+      key &&
+      key === lastRingRef.current.key &&
+      now - lastRingRef.current.at < DEDUPE_MS
+    ) {
+      return;
+    }
+    lastRingRef.current = { key, at: now };
     setIncomingCall(call);
     setActiveCall(call);
     setIsIncomingCallOpen(true);
@@ -120,18 +140,30 @@ export const IncomingCallProvider = ({
   }, [closeIncomingCall, incomingCall, onAccept]);
 
   const declineIncomingCall = useCallback(() => {
+    const call = incomingCall;
+    const socket = socketRef.current;
+    const doctorId = call?.doctorId;
+    if (socket && doctorId) socket.hwCallReject(doctorId);
     closeIncomingCall();
-    onDecline?.(incomingCall ?? undefined, socketRef.current);
+    onDecline?.(call ?? undefined, socket);
     setActiveCall(null);
-    ringKeyRef.current = '';
   }, [closeIncomingCall, incomingCall, onDecline]);
 
   const endActiveCall = useCallback(() => {
+    const call = activeCall;
+    const socket = socketRef.current;
     setIsActiveCallOpen(false);
     setIsCallMinimized(false);
-    onEnd?.(activeCall ?? undefined, socketRef.current);
+    if (socket && call) {
+      socket.bye({
+        doctorId: call.doctorId,
+        nurseId: call.nurseId,
+        roomId: call.roomId,
+        socketId: socket.id,
+      });
+    }
+    onEnd?.(call ?? undefined, socket);
     setActiveCall(null);
-    ringKeyRef.current = '';
   }, [activeCall, onEnd]);
 
   const minimizeCall = useCallback(() => setIsCallMinimized(true), []);
@@ -191,11 +223,26 @@ export const IncomingCallProvider = ({
     };
     /* Portal emits `call` to a health worker and `incoming_call` to a doctor;
        listen to both so the provider works for either consumer. */
+    const dismiss = () => {
+      closeIncomingCall();
+    };
+    const handleAllUsers = (list: SocketUser[]) => {
+      if (!isIncomingOpenRef.current) return;
+      const doctorId = incomingCallRef.current?.doctorId;
+      if (!doctorId) return;
+      const doc = (Array.isArray(list) ? list : []).find(
+        u => u.uuid === doctorId
+      );
+      if (doc && doc.callStatus !== CALL_STATUSES.CALLING) dismiss();
+    };
     const unsubs = [
       socket.onCall(handleIncoming),
       socket.onIncomingCall(handleIncoming),
-      socket.onCancelHw(() => closeIncomingCall()),
-      socket.onCancelDr(() => closeIncomingCall()),
+      socket.onCancelHw(dismiss),
+      socket.onCancelDr(dismiss),
+      socket.onDrCallReject(dismiss),
+      socket.onCallTimeUp(dismiss),
+      socket.onAllUsers(handleAllUsers),
     ];
 
     return () => {
@@ -227,6 +274,8 @@ export const IncomingCallProvider = ({
         openMrsId: call?.openMrsId,
         token: call?.token,
         roomId: call?.roomId,
+        doctorId: call?.doctorId,
+        nurseId: call?.nurseId,
       });
     return () => {
       delete w.triggerIncomingCall;

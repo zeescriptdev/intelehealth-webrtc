@@ -26,6 +26,8 @@ export {
   type WebRTCUser,
 } from './react/IncomingCallProvider.js';
 
+export { useRingtone, type RingtoneOptions } from './react/useRingtone.js';
+
 export { default as IncomingCallModal } from './react/components/IncomingCallModal.js';
 export {
   default as CallRoom,
